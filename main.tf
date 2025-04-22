@@ -35,7 +35,7 @@ resource "aws_security_group" "bastion_sg" {
 # -------------------------------
 resource "aws_instance" "bastion" {
   ami                    = var.ami_id
-  instance_type          = "t2.micro"  # Free Tier elegible
+  instance_type          = "t2.micro" # Free Tier elegible
   subnet_id              = var.subnet_id
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.bastion_sg.id]
