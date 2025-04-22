@@ -75,9 +75,8 @@ jobs:
         if: github.event.inputs.action == 'apply'
         id: bastion_ip
         run: |
-          IP=$(terraform output -raw bastion_public_ip)
-          echo "BASTION_IP=$IP" >> $GITHUB_ENV  # La exporta como variable de entorno
-          echo "::set-output name=ip::$IP"      # También la deja como output para otros jobs
+            IP=$(terraform output -raw bastion_public_ip)
+            echo "ip=$IP" >> "$GITHUB_OUTPUT"
         outputs:
           bastion_ip: ${{ steps.bastion_ip.outputs.ip }}
 
@@ -101,7 +100,9 @@ jobs:
 
       # 🖥️ Muestra la IP de la instancia bastión
       - name: Show Bastion IP
-        run: echo "Target: ${{ needs.terraform.outputs.bastion_ip }}"
+        run: |
+          TARGET_IP=${{ needs.terraform.outputs.bastion_ip }}
+          echo "Target: $TARGET_IP"
 
       # 🔐 Crea la clave privada desde el GitHub Secret
       - name: Crear clave privada desde secret
