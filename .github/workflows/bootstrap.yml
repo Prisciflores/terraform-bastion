@@ -78,6 +78,8 @@ jobs:
           IP=$(terraform output -raw bastion_public_ip)
           echo "BASTION_IP=$IP" >> $GITHUB_ENV  # La exporta como variable de entorno
           echo "::set-output name=ip::$IP"      # También la deja como output para otros jobs
+        outputs:
+          bastion_ip: ${{ steps.bastion_ip.outputs.ip }}
 
   ansible:
     name: Ansible Bootstrap
@@ -112,11 +114,11 @@ jobs:
       - name: Generar archivo de inventario
         run: |
           echo "[bastion]
-          $BASTION_IP ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/priscila-key.pem" > inventory/hosts
+          ${{ needs.terraform.outputs.bastion_ip }} ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/priscila-key.pem" > inventory/hosts
 
       # 🚀 Ejecuta el playbook de Ansible desde el directorio playbooks
       - name: Ejecutar playbook
         run: ansible-playbook -i inventory/hosts bootstrap.yml
 
-        
+
 
