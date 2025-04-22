@@ -1,6 +1,6 @@
 name: Bastion Infra + Ansible Bootstrap  # Nombre del workflow visible en GitHub
 
-# 🔁 Se ejecuta manualmente desde GitHub (workflow_dispatch)
+# 🔁 Se ejecuta manualmente desde GitHub
 on:
   workflow_dispatch:
     inputs:
@@ -20,9 +20,14 @@ jobs:
   terraform:
     name: Terraform Plan & Apply
     runs-on: ubuntu-latest
+
+    # 📤 Define outputs del job para compartir con otros jobs
+    outputs:
+      bastion_ip: ${{ steps.bastion_ip.outputs.ip }}
+
     defaults:
       run:
-        working-directory: ${{ env.TF_WORKING_DIR }}  # Todos los comandos se ejecutan desde la raíz del módulo
+        working-directory: ${{ env.TF_WORKING_DIR }}
 
     steps:
       # 🔄 Clona el repositorio
@@ -39,58 +44,57 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      # 🎨 Verifica formato del código
+      # 🎨 Verifica formato
       - name: Terraform Format
         run: terraform fmt -check
 
-      # 🧪 Valida sintaxis
+      # ✅ Valida sintaxis
       - name: Terraform Validate
         run: terraform validate
 
-      # 🔍 Planifica cambios sin aplicarlos aún
+      # 🔍 Planifica cambios
       - name: Terraform Plan
         run: terraform plan -var-file="terraform.tfvars"
 
-      # ⏳ Espera aprobación manual antes del apply
+      # ⏳ Espera aprobación antes del apply
       - name: Await manual approval
         if: github.event.inputs.action == 'apply'
         uses: trstringer/manual-approval@v1
         with:
           secret: ${{ secrets.GITHUB_TOKEN }}
           environment: production
-          reviewers: priscilaflores  # Cambia esto por tu usuario si es distinto
+          reviewers: priscilaflores
 
-      # ✅ Aplica cambios si se eligió "apply"
+      # ✅ Aplica cambios
       - name: Terraform Apply
         if: github.event.inputs.action == 'apply'
         run: terraform apply -auto-approve -var-file="terraform.tfvars"
 
-      # 💣 Destruye la infraestructura si se eligió "destroy"
+      # 💣 Destruye infraestructura
       - name: Terraform Destroy
         if: github.event.inputs.action == 'destroy'
         run: terraform destroy -auto-approve -var-file="terraform.tfvars"
 
-      # 🌐 Obtiene la IP pública de la instancia bastión
+      # 🌐 Obtiene IP pública del bastión y la exporta como output
       - name: Get Bastion IP
         if: github.event.inputs.action == 'apply'
         id: bastion_ip
         run: |
-            IP=$(terraform output -raw bastion_public_ip)
-            echo "ip=$IP" >> "$GITHUB_OUTPUT"
-        outputs:
-          bastion_ip: ${{ steps.bastion_ip.outputs.ip }}
+          IP=$(terraform output -raw bastion_public_ip)
+          echo "ip=$IP" >> "$GITHUB_OUTPUT"  # 💡 Output para el job (no solo variable)
 
   ansible:
     name: Ansible Bootstrap
-    needs: terraform  # Solo se ejecuta si el job terraform terminó exitosamente
+    needs: terraform  # 🧩 Solo se ejecuta si terraform terminó bien
+    if: github.event.inputs.action == 'apply'
     runs-on: ubuntu-latest
-    if: github.event.inputs.action == 'apply'  # Solo se ejecuta en caso de apply
+
     defaults:
       run:
-        working-directory: ./ansible-bootstrap/playbooks  # Ejecuta desde donde está bootstrap.yml
+        working-directory: ./ansible-bootstrap/playbooks  # 🗂️ Donde está bootstrap.yml
 
     steps:
-      # 🔄 Clona el repositorio
+      # 🔄 Clona el repo
       - name: Checkout repo
         uses: actions/checkout@v3
 
@@ -98,30 +102,25 @@ jobs:
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
 
-      # 🖥️ Muestra la IP de la instancia bastión
+      # 👀 Muestra la IP bastión
       - name: Show Bastion IP
         run: |
           TARGET_IP=${{ needs.terraform.outputs.bastion_ip }}
           echo "Target: $TARGET_IP"
 
-      # 🔐 Crea la clave privada desde el GitHub Secret
+      # 🔐 Crea la clave privada desde secret
       - name: Crear clave privada desde secret
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/priscila-key.pem
           chmod 600 ~/.ssh/priscila-key.pem
 
-      # 📄 Genera inventario dinámico usando la IP pública de la bastión
+      # 🧾 Crea archivo de inventario dinámico
       - name: Generar archivo de inventario
         run: |
           echo "[bastion]
           ${{ needs.terraform.outputs.bastion_ip }} ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/priscila-key.pem" > inventory/hosts
 
-      # 🚀 Ejecuta el playbook de Ansible desde el directorio playbooks
+      # 🚀 Ejecuta el playbook
       - name: Ejecutar playbook
         run: ansible-playbook -i inventory/hosts bootstrap.yml
-
-        #prueba.
-
-
-
