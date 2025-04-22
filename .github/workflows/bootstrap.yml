@@ -120,5 +120,7 @@ jobs:
       - name: Ejecutar playbook
         run: ansible-playbook -i inventory/hosts bootstrap.yml
 
+        #prueba.
+
 
 
