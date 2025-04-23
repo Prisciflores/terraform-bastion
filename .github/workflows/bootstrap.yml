@@ -12,6 +12,8 @@ on:
         options:
           - apply
           - destroy  # Puedes elegir entre aplicar o destruir la infraestructura
+          permissions:
+            issues: write  # ✍️ Permite que GitHub Actions cree issues, necesario para la aprobación manual
 
 env:
   TF_WORKING_DIR: ./  # Directorio donde está el código Terraform
