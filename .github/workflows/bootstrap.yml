@@ -68,7 +68,7 @@ jobs:
         with:
          secret: ${{ secrets.GITHUB_TOKEN }}
          environment: production
-         approvers: prisciflores
+         approvers: '["prisciflores"]'
 
 
       # ✅ Aplica cambios
