@@ -61,14 +61,16 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -var-file="terraform.tfvars"
 
-      # ⏳ Espera aprobación antes del apply
+      
+      # ⏳ Espera aprobación antes del apply (sin asignar usuario)
       - name: Await manual approval
         if: github.event.inputs.action == 'apply'
         uses: trstringer/manual-approval@v1
         with:
-         secret: ${{ secrets.GITHUB_TOKEN }}
-         environment: production
-         #approvers: '["prisciflores"]'
+          secret: ${{ secrets.GITHUB_TOKEN }}         # Token para poder crear el issue
+          environment: production                     # Nombre del environment configurado en GitHub
+          issue-title: "Aprobación manual requerida"  # (opcional) título personalizado
+          # approvers: '["prisciflores"]'
 
 
       # ✅ Aplica cambios
