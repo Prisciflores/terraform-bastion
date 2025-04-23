@@ -64,9 +64,10 @@ jobs:
         if: github.event.inputs.action == 'apply'
         uses: trstringer/manual-approval@v1
         with:
-          secret: ${{ secrets.GITHUB_TOKEN }}
-          environment: production
-          reviewers: priscilaflores
+         secret: ${{ secrets.GITHUB_TOKEN }}
+         environment: production
+         approvers: priscilaflores
+
 
       # ✅ Aplica cambios
       - name: Terraform Apply
