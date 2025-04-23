@@ -68,8 +68,8 @@ jobs:
         uses: trstringer/manual-approval@v1
         with:
           secret: ${{ secrets.GITHUB_TOKEN }}         # Token para poder crear el issue
-          environment: production                     # Nombre del environment configurado en GitHub
-          issue-title: "Aprobación manual requerida"  # (opcional) título personalizado
+          #environment: production                     # Nombre del environment configurado en GitHub
+          #issue-title: "Aprobación manual requerida"  # (opcional) título personalizado
           # approvers: '["prisciflores"]'
 
 
